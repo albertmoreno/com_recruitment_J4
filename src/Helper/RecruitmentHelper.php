@@ -138,7 +138,7 @@ class RecruitmentHelper
         ;
 
         $db->setQuery($query);
-        return $db->loadResult();*/
+        return $db->loadResult(); */
     }
 
     function getActualStatus($id = null)
