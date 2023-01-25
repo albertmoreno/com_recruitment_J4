@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @version    CVS: 1.0.0
  * @package    Com_Recruitment
@@ -37,14 +38,15 @@ $wa = $this->document->getWebAssetManager();
 $wa->useStyle('com_recruitment.list');
 ?>
 
-<form action="<?php echo htmlspecialchars(Uri::getInstance()->toString()); ?>" method="post"
-	  name="adminForm" id="adminForm">
-	<?php if(!empty($this->filterForm)) { echo LayoutHelper::render('joomla.searchtools.default', array('view' => $this)); } ?>
+<form action="<?php echo htmlspecialchars(Uri::getInstance()->toString()); ?>" method="post" name="adminForm" id="adminForm">
+	<?php if (!empty($this->filterForm)) {
+		echo LayoutHelper::render('joomla.searchtools.default', array('view' => $this));
+	} ?>
 	<div class="table-responsive">
 		<table class="table table-striped" id="applicationList">
 			<thead>
-			<tr>
-				
+				<tr>
+
 					<th class=''>
 						<?php echo HTMLHelper::_('grid.sort',  'COM_RECRUITMENT_APPLICATIONS_ID', 'a.id', $listDirn, $listOrder); ?>
 					</th>
@@ -57,80 +59,70 @@ $wa->useStyle('com_recruitment.list');
 						<?php echo HTMLHelper::_('grid.sort',  'COM_RECRUITMENT_APPLICATIONS_LASTNAME', 'a.lastname', $listDirn, $listOrder); ?>
 					</th>
 
-						<?php if ($canEdit || $canDelete): ?>
-					<th class="center">
-						<?php echo Text::_('COM_RECRUITMENT_APPLICATIONS_ACTIONS'); ?>
-					</th>
-					<?php endif; ?>
-
-			</tr>
-			</thead>
-			<tfoot>
-			<tr>
-				<td colspan="<?php echo isset($this->items[0]) ? count(get_object_vars($this->items[0])) : 10; ?>">
-					<div class="pagination">
-						<?php echo $this->pagination->getPagesLinks(); ?>
-					</div>
-				</td>
-			</tr>
-			</tfoot>
-			<tbody>
-			<?php foreach ($this->items as $i => $item) : ?>
-				<?php $canEdit = $user->authorise('core.edit', 'com_recruitment'); ?>
-				<?php if (!$canEdit && $user->authorise('core.edit.own', 'com_recruitment')): ?>
-				<?php $canEdit = Factory::getApplication()->getIdentity()->id == $item->created_by; ?>
-				<?php endif; ?>
-
-				<tr class="row<?php echo $i % 2; ?>">
-					
-					<td>
-						<?php echo $item->id; ?>
-					</td>
-					<td>
-						<?php $canCheckin = Factory::getApplication()->getIdentity()->authorise('core.manage', 'com_recruitment.' . $item->id) || $item->checked_out == Factory::getApplication()->getIdentity()->id; ?>
-						<?php if($canCheckin && $item->checked_out > 0) : ?>
-							<a href="<?php echo Route::_('index.php?option=com_recruitment&task=application.checkin&id=' . $item->id .'&'. Session::getFormToken() .'=1'); ?>">
-							<?php echo HTMLHelper::_('jgrid.checkedout', $i, $item->uEditor, $item->checked_out_time, 'application.', false); ?></a>
-						<?php endif; ?>
-						<a href="<?php echo Route::_('index.php?option=com_recruitment&view=application&id='.(int) $item->id); ?>">
-							<?php echo $this->escape($item->firstname); ?></a>
-					</td>
-					<td>
-						<?php echo $item->lastname; ?>
-					</td>
-					<?php if ($canEdit || $canDelete): ?>
-						<td class="center">
-							<?php if ($canEdit): ?>
-								<a href="<?php echo Route::_('index.php?option=com_recruitment&task=application.edit&id=' . $item->id, false, 2); ?>" class="btn btn-mini" type="button"><i class="icon-edit" ></i></a>
-							<?php endif; ?>
-							<?php if ($canDelete): ?>
-								<a href="<?php echo Route::_('index.php?option=com_recruitment&task=applicationform.remove&id=' . $item->id, false, 2); ?>" class="btn btn-mini delete-button" type="button"><i class="icon-trash" ></i></a>
-							<?php endif; ?>
-						</td>
+					<?php if ($canEdit || $canDelete) : ?>
+						<th class="center">
+							<?php echo Text::_('COM_RECRUITMENT_APPLICATIONS_ACTIONS'); ?>
+						</th>
 					<?php endif; ?>
 
 				</tr>
-			<?php endforeach; ?>
+			</thead>
+			<tfoot>
+				<tr>
+					<td colspan="<?php echo isset($this->items[0]) ? count(get_object_vars($this->items[0])) : 10; ?>">
+						<div class="pagination">
+							<?php echo $this->pagination->getPagesLinks(); ?>
+						</div>
+					</td>
+				</tr>
+			</tfoot>
+			<tbody>
+				<?php foreach ($this->items as $i => $item) : ?>
+					<?php $canEdit = $user->authorise('core.edit', 'com_recruitment'); ?>
+					<?php if (!$canEdit && $user->authorise('core.edit.own', 'com_recruitment')) : ?>
+						<?php $canEdit = Factory::getApplication()->getIdentity()->id == $item->created_by; ?>
+					<?php endif; ?>
+
+					<tr class="row<?php echo $i % 2; ?>">
+
+						<td>
+							<?php echo $item->id; ?>
+						</td>
+						<td>
+							<a href="<?php echo Route::_('index.php?option=com_recruitment&view=application&id=' . (int) $item->id); ?>">
+								<?php echo $this->escape($item->firstname); ?></a>
+						</td>
+						<td>
+							<?php echo $item->lastname; ?>
+						</td>
+						<?php if ($canEdit || $canDelete) : ?>
+							<td class="center">
+								<?php if ($canEdit) : ?>
+									<a href="<?php echo Route::_('index.php?option=com_recruitment&task=application.edit&id=' . $item->id, false, 2); ?>" class="btn btn-mini" type="button"><i class="icon-edit"></i></a>
+								<?php endif; ?>
+								<?php if ($canDelete) : ?>
+									<a href="<?php echo Route::_('index.php?option=com_recruitment&task=applicationform.remove&id=' . $item->id, false, 2); ?>" class="btn btn-mini delete-button" type="button"><i class="icon-trash"></i></a>
+								<?php endif; ?>
+							</td>
+						<?php endif; ?>
+
+					</tr>
+				<?php endforeach; ?>
 			</tbody>
 		</table>
 	</div>
-	<?php if ($canCreate) : ?>
-		<a href="<?php echo Route::_('index.php?option=com_recruitment&task=applicationform.edit&id=0', false, 0); ?>"
-		   class="btn btn-success btn-small"><i
-				class="icon-plus"></i>
-			<?php echo Text::_('COM_RECRUITMENT_ADD_ITEM'); ?></a>
-	<?php endif; ?>
 
-	<input type="hidden" name="task" value=""/>
-	<input type="hidden" name="boxchecked" value="0"/>
-	<input type="hidden" name="filter_order" value=""/>
-	<input type="hidden" name="filter_order_Dir" value=""/>
+
+	<input type="hidden" name="task" value="" />
+	<input type="hidden" name="boxchecked" value="0" />
+	<input type="hidden" name="filter_order" value="" />
+	<input type="hidden" name="filter_order_Dir" value="" />
 	<?php echo HTMLHelper::_('form.token'); ?>
 </form>
 
 <?php
-	if($canDelete) {
-		$wa->addInlineScript("
+if ($canDelete) {
+	$wa->addInlineScript("
 			jQuery(document).ready(function () {
 				jQuery('.delete-button').click(deleteItem);
 			});
@@ -142,5 +134,5 @@ $wa->useStyle('com_recruitment.list');
 				}
 			}
 		", [], [], ["jquery"]);
-	}
+}
 ?>

@@ -15,6 +15,10 @@ defined('_JEXEC') or die;
 use \Joomla\CMS\Factory;
 use \Joomla\CMS\MVC\Model\BaseDatabaseModel;
 use Recruitment\Component\Recruitment\Site\Model\ApplicationModel;
+use JHtml;
+use JText;
+use stdClass;
+use Joomla\CMS\Date\Date;
 
 /**
  * Class RecruitmentFrontendHelper
@@ -73,8 +77,8 @@ class RecruitmentHelper
     public static function getApplication($job_id = null)
     {
         $user = Factory::getUser();
-        $db = &Factory::getDBO();
-        $date = &Factory::getDate();
+        $db = Factory::getDBO();
+        $date = Factory::getDate();
 
         $query = "SELECT application.id"
             . " FROM `#__recruitment_applications` AS application"
@@ -109,7 +113,7 @@ class RecruitmentHelper
 
     public static function getJob($id = null)
     {
-        $db = &JFactory::getDBO();
+        $db = Factory::getDBO();
 
         $query = "SELECT jobs.*"
             . " FROM `#__recruitment_jobs` AS jobs"
@@ -141,9 +145,9 @@ class RecruitmentHelper
         return $db->loadResult(); */
     }
 
-    function getActualStatus($id = null)
+    public static function getActualStatus($id = null)
     {
-        $db = &JFactory::getDBO();
+        $db = Factory::getDBO();
 
         $query = "SELECT status.*"
             . " FROM `#__recruitment_status` AS status"
@@ -153,10 +157,10 @@ class RecruitmentHelper
         return $db->loadObject();
     }
 
-    function getChecklist($id = null)
+    public static function getChecklist($id = null)
     {
 
-        $db = &JFactory::getDBO();
+        $db = Factory::getDBO();
         $checklist = new stdClass();
 
         $checklist->allow_submit = true;
@@ -168,8 +172,8 @@ class RecruitmentHelper
             . " on jobs.id = app.job_id"
             . " WHERE app.id=" . $id;
         $db->setQuery($query);
-        $closing_date = new JDate($db->loadResult());
-        $currentTime = new JDate('now');
+        $closing_date = new Date($db->loadResult());
+        $currentTime = new Date('now');
         if ($currentTime > $closing_date) :
             $checklist->too_late = true;
             $checklist->allow_submit = false;
@@ -196,120 +200,87 @@ class RecruitmentHelper
             $checklist->allow_submit = false;
         endif;
 
-        $published_tabs = Helper::getPublishedTabs($personal_data->job_id);
-
-        if (in_array('2', $published_tabs)) :
-            //Check Degrees
-            $degrees = Helper::getDegrees($id);
-            if (count($degrees) > 0) :
-                $checklist->degrees = true;
-            else :
-                $checklist->degrees = false;
-                $checklist->allow_submit = false;
-            endif;
+        //Check Degrees
+        $degrees = RecruitmentHelper::getDegrees($id);
+        if (count($degrees) > 0) :
+            $checklist->degrees = true;
+        else :
+            $checklist->degrees = false;
+            $checklist->allow_submit = false;
         endif;
 
         //Check Work Experience
-        if (in_array('3', $published_tabs)) :
-            $work_experience = Helper::getWorkExperiences($id);
-            if (count($work_experience) > 0) :
-                $checklist->work_experience = true;
-            else :
-                $checklist->work_experience = false;
-                $checklist->allow_submit = false;
-            endif;
-        endif;
+        /*$work_experience = RecruitmentHelper::getWorkExperiences($id);
+        if (count($work_experience) > 0) :
+            $checklist->work_experience = true;
+        else :
+            $checklist->work_experience = false;
+            $checklist->allow_submit = false;
+        endif;*/
 
         //Check NO CV
-        if (in_array('4', $published_tabs)) :
-            $query = "SELECT docs.id"
-                . " FROM `#__recruitment_docs` AS docs"
-                . " WHERE docs.application_id=" . $id
-                . " AND docs.doc_type_id= '1'";
-            $db->setQuery($query);
-            if ($db->loadResult()) :
-                $checklist->cv = true;
-            else :
-                $checklist->cv = false;
-                $checklist->allow_submit = false;
-            endif;
+        $query = "SELECT docs.id"
+            . " FROM `#__recruitment_docs` AS docs"
+            . " WHERE docs.application_id=" . $id
+            . " AND docs.doc_type_id= '1'";
+        $db->setQuery($query);
+        if ($db->loadResult()) :
+            $checklist->cv = true;
+        else :
+            $checklist->cv = false;
+            $checklist->allow_submit = false;
         endif;
 
         //Check No motivation letter
-        if (in_array('4', $published_tabs)) :
-            $query = "SELECT docs.id"
-                . " FROM `#__recruitment_docs` AS docs"
-                . " WHERE docs.application_id=" . $id
-                . " AND docs.doc_type_id= '2'";
-            $db->setQuery($query);
-            if ($db->loadResult()) :
-                $checklist->motivation_letter = true;
-            else :
-                $checklist->motivation_letter = false;
-                $checklist->allow_submit = false;
-            endif;
+        $query = "SELECT docs.id"
+            . " FROM `#__recruitment_docs` AS docs"
+            . " WHERE docs.application_id=" . $id
+            . " AND docs.doc_type_id= '2'";
+        $db->setQuery($query);
+        if ($db->loadResult()) :
+            $checklist->motivation_letter = true;
+        else :
+            $checklist->motivation_letter = false;
+            $checklist->allow_submit = false;
         endif;
 
         //Check No academic records
-        if (in_array('4', $published_tabs)) :
-            $query = "SELECT docs.id"
-                . " FROM `#__recruitment_docs` AS docs"
-                . " WHERE docs.application_id=" . $id
-                . " AND docs.doc_type_id= '3'";
-            $db->setQuery($query);
-            if ($db->loadResult()) :
-                $checklist->academic_records = true;
-            else :
-                $checklist->academic_records = false;
-                $checklist->allow_submit = false;
-            endif;
+        $query = "SELECT docs.id"
+            . " FROM `#__recruitment_docs` AS docs"
+            . " WHERE docs.application_id=" . $id
+            . " AND docs.doc_type_id= '3'";
+        $db->setQuery($query);
+        if ($db->loadResult()) :
+            $checklist->academic_records = true;
+        else :
+            $checklist->academic_records = false;
+            $checklist->allow_submit = false;
         endif;
 
-        //Check No Proof of English Level
-        /*if (in_array('4', $published_tabs)):
-            $query = "SELECT docs.id"
-                . " FROM `#__recruitment_docs` AS docs"
-                . " WHERE docs.application_id=" . $id
-                . " AND docs.doc_type_id= '5'";
-            $db->setQuery($query);
-            if ($db->loadResult()):
-                $checklist->english_level = true;
-            else:
-                $checklist->english_level = false;
-                $checklist->allow_submit = false;
-            endif;
-        endif;*/
-
         //Check Referees
-        if (in_array('5', $published_tabs)) :
-            $referees = Helper::getReferees($id);
-            if (count($referees) >= 1) :
-                $checklist->referees = true;
-            else :
-                $checklist->referees = false;
-                $checklist->allow_submit = false;
-            endif;
+        $referees = RecruitmentHelper::getReferees($id);
+        if (count($referees) >= 1) :
+            $checklist->referees = true;
+        else :
+            $checklist->referees = false;
+            $checklist->allow_submit = false;
         endif;
 
         //Check Programmes
-        if (in_array('6', $published_tabs)) :
-            $selectedprogrammes = Helper::getSelectedProgrammes($id);
-            if ($selectedprogrammes) :
-                $checklist->selectedprogrammes = true;
-            else :
-                $checklist->selectedprogrammes = false;
-                $checklist->allow_submit = false;
-            endif;
+        $selectedprogrammes = RecruitmentHelper::getSelectedProgrammes($id);
+        if ($selectedprogrammes) :
+            $checklist->selectedprogrammes = true;
+        else :
+            $checklist->selectedprogrammes = false;
+            $checklist->allow_submit = false;
         endif;
 
         //Check Eligibility
-        if (in_array('8', $published_tabs)) :
-            if (($personal_data->eligibility1 == '1') && ($personal_data->eligibility2 == '1')) :
-                $checklist->eligibility = true;
-            else :
-                $checklist->eligibility = false;
-                $checklist->allow_submit = false;
-            endif;
+        if (($personal_data->eligibility1 == '1') && ($personal_data->eligibility2 == '1')) :
+            $checklist->eligibility = true;
+        else :
+            $checklist->eligibility = false;
+            $checklist->allow_submit = false;
         endif;
 
         return $checklist;
@@ -318,7 +289,7 @@ class RecruitmentHelper
     function getMyApplications()
     {
         $user = JFactory::getUser();
-        $db = &JFactory::getDBO();
+        $db = Factory::getDBO();
 
         $query = "SELECT application.*, jobs.short_description, jobs.description, jobs.closing_date, status.description as status"
             . " FROM `#__recruitment_applications` AS application"
@@ -348,9 +319,9 @@ class RecruitmentHelper
         return false;
     }
 
-    function findFromUploadCode($upload_code)
+    public static function findFromUploadCode($upload_code)
     {
-        $db = &JFactory::getDBO();
+        $db = Factory::getDBO();
 
         $query = "SELECT referee.*"
             . " FROM `#__recruitment_referees` AS referee"
@@ -364,21 +335,23 @@ class RecruitmentHelper
     * GET APPLICATION ADDITIONAL DATA
     * */
 
-    function getDegrees($id = null)
+    public static function getDegrees($id = null)
     {
-        $db = &JFactory::getDBO();
+        $db = Factory::getDBO();
 
-        $query = "SELECT degrees.*"
+        $query = "SELECT degrees.*, countries.printable_name"
             . " FROM `#__recruitment_degrees` AS degrees"
+            . " LEFT JOIN `#__recruitment_countries` AS countries"
+            . " on countries.id = degrees.country_id"
             . " WHERE degrees.application_id=" . $id;
 
         $db->setQuery($query);
         return $db->loadObjectList();
     }
 
-    function getWorkExperiences($id = null)
+    public static function getWorkExperiences($id = null)
     {
-        $db = &JFactory::getDBO();
+        $db = Factory::getDBO();
 
         $query = "SELECT work.*, countries.printable_name"
             . " FROM `#__recruitment_workexperiences` AS work"
@@ -390,9 +363,9 @@ class RecruitmentHelper
         return $db->loadObjectList();
     }
 
-    /*function getFiles($id = null)
+    public static function getDocs($id = null)
     {
-        $db = &JFactory::getDBO();
+        $db = Factory::getDBO();
 
         $query = "SELECT docs.*, doc_types.description"
             . " FROM `#__recruitment_docs` AS docs"
@@ -402,11 +375,11 @@ class RecruitmentHelper
 
         $db->setQuery($query);
         return $db->loadObjectList();
-    }*/
+    }
 
-    function getReferees($id = null)
+    public static function getReferees($id = null)
     {
-        $db = &JFactory::getDBO();
+        $db = Factory::getDBO();
 
         $query = "SELECT referees.*"
             . " FROM `#__recruitment_referees` AS referees"
@@ -416,9 +389,9 @@ class RecruitmentHelper
         return $db->loadObjectList();
     }
 
-    function getRefereeName($id = null)
+    public static function getRefereeName($id = null)
     {
-        $db = &JFactory::getDBO();
+        $db = Factory::getDBO();
 
         $query = "SELECT referees.*"
             . " FROM `#__recruitment_referees` AS referees"
@@ -428,9 +401,9 @@ class RecruitmentHelper
         return $db->loadObject();
     }
 
-    function getSelectedProgrammes($id = null)
+    public static function getSelectedProgrammes($id = null)
     {
-        $db = &JFactory::getDBO();
+        $db = Factory::getDBO();
 
         $query = "SELECT ap.programme_id"
             . " FROM `#__recruitment_applicationprograms` AS ap"
@@ -441,9 +414,9 @@ class RecruitmentHelper
         return $db->loadColumn();
     }
 
-    function getSelectedProgrammesToDisplay($id = null)
+    public static function getSelectedProgrammesToDisplay($id = null)
     {
-        $db = &JFactory::getDBO();
+        $db = Factory::getDBO();
 
         $query = "SELECT programmes.description"
             . " FROM `#__recruitment_applicationprograms` AS ap"
@@ -460,9 +433,9 @@ class RecruitmentHelper
      * SELECTORS
      * */
 
-    function getGenderList()
+    public static function getGenderList()
     {
-        $db = &JFactory::getDBO();
+        $db = Factory::getDBO();
 
         $query = "SELECT g.id AS value, g.description AS text"
             . " FROM `#__recruitment_genders` AS g"
@@ -473,35 +446,35 @@ class RecruitmentHelper
         return $genderslist;
     }
 
-    function getCountryList()
+    public static function getCountryList()
     {
-        $db = &JFactory::getDBO();
+        $db = Factory::getDBO();
 
         $query = "SELECT g.id AS value, g.printable_name AS text"
             . " FROM `#__recruitment_countries` AS g"
             . " ORDER BY g.printable_name";
         $db->setQuery($query);
-        $countrieslist[] = JHTML::_('select.option', '', JText::_('- Select Country -'), 'value', 'text');
+        $countrieslist[] = JHtml::_('select.option', '', JText::_('- Select Country -'), 'value', 'text');
         $countrieslist = array_merge($countrieslist, $db->loadObjectList());
         return $countrieslist;
     }
 
-    function getWherediduList()
+    public static function getWherediduList()
     {
-        $db = &JFactory::getDBO();
+        $db = Factory::getDBO();
 
         $query = "SELECT g.id AS value, g.description AS text"
             . " FROM `#__recruitment_wheredidus` AS g"
             . " ORDER BY g.order";
         $db->setQuery($query);
-        $wheredidulist[] = JHTML::_('select.option', '', JText::_('- Select Option -'), 'value', 'text');
+        $wheredidulist[] = JHtml::_('select.option', '', JText::_('- Select Option -'), 'value', 'text');
         $wheredidulist = array_merge($wheredidulist, $db->loadObjectList());
         return $wheredidulist;
     }
 
     function getOverallRange()
     {
-        $db = &JFactory::getDBO();
+        $db = Factory::getDBO();
 
         $query = "SELECT g.id AS value, g.description AS text"
             . " FROM `#__recruitment_overallranges` AS g"
@@ -512,9 +485,9 @@ class RecruitmentHelper
         return $overallrangeslist;
     }
 
-    function getDocTypeList()
+    public static function getDocTypeList()
     {
-        $db = &JFactory::getDBO();
+        $db = Factory::getDBO();
 
         $query = "SELECT g.id AS value, g.description AS text"
             . " FROM `#__recruitment_doctypes` AS g"
@@ -525,9 +498,9 @@ class RecruitmentHelper
         return $doctypelist;
     }
 
-    function getProgrammes()
+    public static function getProgrammes()
     {
-        $db = &JFactory::getDBO();
+        $db = Factory::getDBO();
 
         $query = "SELECT g.id AS value, g.description AS text"
             . " FROM `#__recruitment_programmes` AS g"
@@ -538,9 +511,9 @@ class RecruitmentHelper
         return $programlist;
     }
 
-    function getStatus()
+    public static function getStatus()
     {
-        $db = &JFactory::getDBO();
+        $db = Factory::getDBO();
 
         $query = "SELECT g.id AS value, g.description AS text"
             . " FROM `#__recruitment_status` AS g"
@@ -553,7 +526,7 @@ class RecruitmentHelper
 
     function getPublishedTabs($job_id = null)
     {
-        $db = &JFactory::getDBO();
+        $db = Factory::getDBO();
 
         $query = "SELECT tab_id"
             . " FROM `#__recruitment_tabsjobs` AS tj"
@@ -561,5 +534,38 @@ class RecruitmentHelper
 
         $db->setQuery($query);
         return $db->loadColumn();
+    }
+
+    public static function getCountryName($id)
+    {
+        $db = Factory::getDBO();
+
+        $query = "SELECT printable_name"
+            . " FROM `#__recruitment_countries`"
+            . " WHERE id=" . $id;
+        $db->setQuery($query);
+        return $db->loadResult();
+    }
+
+    public static function getWherediduName($id)
+    {
+        $db = Factory::getDBO();
+
+        $query = "SELECT description"
+            . " FROM `#__recruitment_wheredidus`"
+            . " WHERE id=" . $id;
+        $db->setQuery($query);
+        return $db->loadResult();
+    }
+
+    public static function getGenderName($id)
+    {
+        $db = Factory::getDBO();
+
+        $query = "SELECT description"
+            . " FROM `#__recruitment_genders`"
+            . " WHERE id=" . $id;
+        $db->setQuery($query);
+        return $db->loadResult();
     }
 }
